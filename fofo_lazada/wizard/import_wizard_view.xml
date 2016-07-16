@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="view_lazada_import_wizard" model="ir.ui.view">
+            <field name="name">lazad.import.form</field>
+            <field name="model">lazada.import</field>
+            <field name="arch" type="xml">
+                <form string="Import">
+                    <separator string="Import Lazada Orders"/>
+                    <label string="This wizard will create lazada orders using lazada order file."/>
+                    <newline/>
+                    <label string="It will also create log history to show status of import."/>
+                        <group>
+                            <group>
+                                <field name="input_file"/>
+                                <field name="journal_id" domain="[('type', '=', 'sale')]"/>
+                                <field name="refund_journal_id" domain="[('type', '=', 'sale_refund')]"/>
+                            </group>
+                        <group> </group>
+                        </group>
+                <footer>
+                    <button name="import_orders" string="Import" type="object" class="oe_highlight"/> or 
+                    <button special="cancel" string="Cancel" class="oe_link"/>
+                </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_import_lazada" model="ir.actions.act_window">
+            <field name="name">Import Lazada Order</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">lazada.import</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_lazada_import_wizard"/>
+            <field name="context">{}</field>
+            <field name="target">new</field>
+        </record>
+        
+        <menuitem id="lazada_import_wiz_menu" name="Import Lazada Order" action="action_import_lazada"
+                   parent= "lazada_main_menu"/>
+
+    </data>
+</openerp>

@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+        <record model="ir.ui.view" id="lazada_payment_history_form">
+            <field name="name">lazada.payment.history.form</field>
+            <field name="model">payment.history</field>
+            <field name="arch" type="xml">
+                 <form string="Lazada Payment Import History" create="false" edit="false">
+                    <header>
+                        <field name="status" widget="statusbar"/> 
+                    </header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="journal_id"/> 
+                                <field name="voucher_id"/>
+                                <field name="user_id"/>
+                            </group>
+                            <group>
+                                <field name="partner_id"/>
+                                <field name="import_date"/>
+                                <field name="currency_id"/> 
+                                <field name="input_file"/> 
+                            </group>
+                            <group/>
+                        </group>
+                        <notebook string="History Lines">
+                            <page string="Payment History Lines">
+                                <field name="history_line_ids">
+                                    <tree string="History Lines" colors="blue:transaction_type == 'Item Price Credit';" >
+                                        <field name="date"/> 
+                                        <field name="order_no"/> 
+                                        <field name="amount"/> 
+                                        <field name="amount_vat"/> 
+                                        <field name="seller_sku"/> 
+                                        <field name="lazada_sku"/> 
+                                        <field name="order_item_no"/> 
+                                        <field name="transaction_type"/> 
+                                        <field name="transaction_number"/> 
+                                        <field name="ref"/> 
+                                        <field name="status"/> 
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Reason / Status Information">
+                                <field name="reason"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                 </form>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="lazada_payment_import_history_tree">
+            <field name="name">payment.history.tree</field>
+            <field name="model">payment.history</field>
+            <field name="arch" type="xml">
+                 <tree string="Lazada Payment Import History" create="false" edit="false">
+                    <field name="name"/>
+                    <field name="partner_id"/>
+                    <field name="voucher_id"/>
+                    <field name="journal_id"/>
+                    <field name="import_date"/> 
+                    <field name="currency_id"/>
+                    <field name="status"/> 
+                 </tree>
+            </field>
+        </record>
+        
+        <record id="lazada_payment_import_history_filter" model="ir.ui.view">
+            <field name="name">payment.history.select</field>
+            <field name="model">payment.history</field>
+            <field name="arch" type="xml">
+                <search string="Search History">
+                    <group>
+                        <field name="name"/>
+                        <field name="partner_id" />
+                        <field name="import_date"/>
+                        <field name="journal_id"/>
+                        <field name="status"/> 
+                    </group>
+                    <group expand="0" string="Group By...">
+                        <filter string="Import Number" name="name" context="{'group_by':'name'}" />
+                        <filter string="Partner" name="partner_id" context="{'group_by':'partner_id'}" />
+                        <filter string="Journal" name="journal_id" context="{'group_by':'journal_id'}" />
+                        <filter string="Date" name="import_date" context="{'group_by':'import_date'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+        <record id='lazada_payment_import_history_action' model='ir.actions.act_window'>
+            <field name='name'>Lazada Payment Import History</field>
+            <field name='res_model'>payment.history</field>
+            <field name='view_type'>form</field>
+            <field name='view_mode'>tree,form</field>
+        </record>
+
+        <menuitem id="lazada_payment_import_history_menu" name="Lazada Payment History" parent="lazada_import_payment_main_menu"
+                action="lazada_payment_import_history_action" />
+    </data>
+</openerp>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        
+        <!-- Project Task Gantt -->
+    
+        <record id="view_stock_card_form_id" model="ir.ui.view">
+            <field name="name">stock.card.print</field>
+            <field name="model">stock.card.print</field>
+            <field name="arch" type="xml">
+                <form string="Print Stock Card Report">
+                    <group>
+                        <group>
+                            <field name="start_date" />
+                            <field name="end_date" />
+                        </group>
+                        <group>
+                            <field name="location_id" />
+                        </group>
+                    </group>
+                    <notebook string="Products">
+                        <page string="Products">
+                            <field name="product_ids"/>
+                        </page>
+                    </notebook>
+                    <footer>
+                        <button name="print_stock_card_report"
+                                type="object"
+                                string="Print" 
+                                class="oe_highlight"/> or 
+                        <button string="Cancel" class="oe_link" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_stock_card_print" model="ir.actions.act_window">
+            <field name="name">Print Stock Card Report</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">stock.card.print</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+        
+        <menuitem name="Print Stock Card" parent="stock.next_id_61"
+            sequence="5" icon="STOCK_PRINT" action="action_stock_card_print"
+            id="menu_stock_card"/>
+        
+     </data>
+</openerp>

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<openerp>
+    <data>
+
+        <record model="ir.ui.view" id="view_vendor_receipt_form_voucher_payment_order_lazada">
+            <field name="name">account.voucher.voucher.customer.payment.form</field>
+            <field name="model">account.voucher</field>
+            <field name="inherit_id" ref="account_voucher_deduction.view_vendor_receipt_form_voucher_payment"></field>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='journal_id']" position="after">
+                    <field name="is_lazada_payment"/>
+                </xpath>
+                <xpath expr="//field[@name='multiple_reconcile_ids']/tree/field[@name='analytic_id']" position="after">
+                        <field name="order_no"  readonly="True" invisible="1"/>
+                </xpath>
+            </field>
+         </record>
+
+        <record model="ir.ui.view" id="view_vendor_supplier_form_voucher_payment_lazada_order">
+            <field name="name">account.voucher.voucher.supplier.payment.form</field>
+            <field name="model">account.voucher</field>
+            <field name="inherit_id" ref="account_voucher_deduction.view_vendor_supplier_form_voucher_payment"></field>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='journal_id']" position="after">
+                    <field name="is_lazada_payment"/>
+                </xpath>
+                <xpath expr="//field[@name='multiple_reconcile_ids']/tree/field[@name='analytic_id']" position="after">
+                        <field name="order_no"  readonly="True"  invisible="1"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</openerp>

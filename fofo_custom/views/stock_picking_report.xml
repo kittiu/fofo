@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <template id="report_picking_package_add" inherit_id="stock.report_picking">
+
+            <!--<xpath expr="//h2/span[2]" position="after">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                    <b>
+                        <span style="color:white;">....</span>
+                        <span style="font-size:16px;text-align:right;">Container Order:</span>
+                        <span t-field="o.container_id"  style="font-size:16px;text-align:right;"/>
+                    </b>
+                </t>
+            </xpath> -->
+
+            <xpath expr="//h2" position="replace">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                    <h2>
+                        <span t-field="o.name"/>
+                        <span style="color:white;">....</span>
+                        <span>Container Order:</span>
+                        <span t-field="o.container_id"/>
+                    </h2>
+                </t>
+                <t t-if="o.picking_type_id.code != 'incoming'">
+                    <h2>
+                        <span t-field="o.name"/>
+                        <t t-if="o.container_id">
+                            <span>Container Order:</span>
+                            <span t-field="o.container_id"/>
+                        </t>
+                    </h2>
+                </t>
+            </xpath>
+
+            <xpath expr="//div/table[2]/thead/tr/th[2]" position="after">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                <th class="text-right">Qty/Package</th>
+                <th class="text-right">Total Package</th>
+                </t>
+            </xpath>
+            <xpath expr="//div/table[2]/tbody/tr/t/td[2]" position="after">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                <td class="text-right"><span t-field="move.qty_package"/></td>
+                <td class="text-right"><span t-esc="move.number_packages or 0"/></td>
+                </t>
+            </xpath>
+
+            <xpath expr="//div/table[3]/thead/tr/th[2]" position="after">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                <th class="text-right">Qty/Package</th>
+                <th class="text-right">Total Package</th>
+                </t>
+            </xpath>
+            <xpath expr="//div/table[3]/tbody/tr/td[2]" position="after">
+                <t t-if="o.picking_type_id.code == 'incoming'">
+                <td class="text-right"><span t-field="pack_operation.qty_package"/></td>
+                <td class="text-right"><span t-esc="pack_operation.number_packages or 0"/></td>
+                </t>
+            </xpath>
+        </template>
+
+
+    </data>
+</openerp>

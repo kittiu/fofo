@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+
+        <record id="procurement_form_view" model="ir.ui.view">
+            <field name="name">procurement.form.view</field>
+            <field name="model">procurement.order</field>
+            <field name="inherit_id" ref="procurement.procurement_form_view" />
+            <field name="arch" type="xml">
+                <button name="cancel" position="after">
+                	<button name="force_done" attrs="{'invisible': [('state', '!=', 'running')]}"
+                		string="Force Done" type="object" />
+                </button>
+            </field>
+        </record>
+        
+    </data>
+</openerp>
