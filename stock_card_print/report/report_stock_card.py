@@ -26,7 +26,20 @@ from openerp import api, fields, models
 class ReportStockCardReport(models.AbstractModel):
     _name = 'report.stock_card_print.stock_card_report_id'
 
-    def _get_initial_balance_qty(self, product_id, location_id, start_date):
+#     def _get_initial_balance_qty(self, product_id, location_id, start_date):
+#         self._cr.execute('''
+#             SELECT SUM(product_uom_qty) as initial_qty
+#             FROM stock_move
+#             WHERE
+#                 product_id = %s AND
+#                 location_id = %s AND
+#                 date < %s
+#         ''', (product_id, location_id, start_date))
+#         init_qty = self._cr.fetchone()[0]
+#         return init_qty or 0.0
+
+    def _get_initial_balance_qty(self, product_id, location_id,
+                                 return_location, start_date):
         self._cr.execute('''
             SELECT
                 move.id,
@@ -42,35 +55,41 @@ class ReportStockCardReport(models.AbstractModel):
                 res_partner p on (p.id=move.partner_id)
             WHERE
                 move.product_id = %s AND
-                (move.location_id = %s or location_dest_id=%s) AND
+                (move.location_id in %s or location_dest_id in %s) AND
+                move.state = 'done' AND
                 move.date < %s
             ORDER BY
                 move.date asc
-        ''', (product_id, location_id, location_id, start_date))
+        ''', (product_id, (location_id, return_location),
+              (location_id, return_location), start_date))
         move_result = self._cr.dictfetchall()
 
         balance_qty = 0.0
         for res in move_result:
             destionation_address = self.env['stock.location'].\
                 browse(res['location_dest_id'])
-            if destionation_address.usage == 'customer':
-                balance_qty = balance_qty - res['quantity']
-                res['quantity'] = -1 * res['quantity']
+            if res['location_dest_id'] == location_id or\
+                    res['location_dest_id'] == return_location:
+                balance_qty = balance_qty + res['quantity']
                 res['balance'] = balance_qty
             else:
-                balance_qty = balance_qty + res['quantity']
+                balance_qty = balance_qty - res['quantity']
+                res['quantity'] = -1 * res['quantity']
                 res['balance'] = balance_qty
         return balance_qty or 0.0
 
     def _get_product_line(self, data):
         result = {}
+        location_obj = self.env['stock.location']
         start_date = data['start_date']
         end_date = data['end_date']
-        location = self.env['stock.location'].browse(data['location_id'][0])
+        location = location_obj.browse(data['location_id'][0])
+        return_location = location_obj.browse(data['return_location_id'][0])
         products = self.env['product.product'].browse(data['product_ids'])
+
         for product in products:
             init_balance_qty = self._get_initial_balance_qty(
-                                    product.id, location.id, start_date)
+                product.id, location.id, return_location.id, start_date)
             self._cr.execute('''
                 SELECT
                     move.id,
@@ -86,25 +105,29 @@ class ReportStockCardReport(models.AbstractModel):
                     res_partner p on (p.id=move.partner_id)
                 WHERE
                     move.product_id = %s AND
-                    (move.location_id = %s or location_dest_id=%s) AND
+                    (move.location_id in %s or location_dest_id in %s) AND
+                    move.state = 'done' AND
                     move.date >= %s AND
                     move.date <= %s
                 ORDER BY
                     move.date asc
-            ''', (product.id, location.id, location.id, start_date, end_date))
+            ''', (product.id, (location.id, return_location.id),
+                  (location.id, return_location.id), start_date, end_date))
             move_result = self._cr.dictfetchall()
-
             balance_qty = init_balance_qty
             for res in move_result:
                 destionation_address = self.env['stock.location'].\
                     browse(res['location_dest_id'])
-                if destionation_address.usage == 'customer':
+
+                if res['location_dest_id'] == location.id or\
+                        res['location_dest_id'] == return_location.id:
+                    balance_qty = balance_qty + res['quantity']
+                    res['balance'] = balance_qty
+                else:
                     balance_qty = balance_qty - res['quantity']
                     res['quantity'] = -1 * res['quantity']
                     res['balance'] = balance_qty
-                else:
-                    balance_qty = balance_qty + res['quantity']
-                    res['balance'] = balance_qty
+
             move_result.insert(0, {'balance': init_balance_qty,
                                    'doc_number': False,
                                    'quantity': False,

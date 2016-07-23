@@ -47,6 +47,11 @@ class StockCardPrint(models.TransientModel):
         string='Warehouse Location',
         required=True,
     )
+    return_location_id = fields.Many2one(
+        'stock.location',
+        string='Return Location',
+        required=True,
+    )
 
     @api.multi
     def print_stock_card_report(self):
@@ -54,6 +59,6 @@ class StockCardPrint(models.TransientModel):
         if not data.get('product_ids', []):
             product_ids = self.env['product.product'].search([]).ids
             data['product_ids'] = product_ids
-        return self.env['report'].get_action(self,
-            'stock_card_print.stock_card_report_id', data=data)
+        return self.env['report'].get_action(
+            self, 'stock_card_print.stock_card_report_id', data=data)
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
