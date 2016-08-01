@@ -26,57 +26,16 @@ from openerp import api, fields, models
 class ReportStockCardReport(models.AbstractModel):
     _name = 'report.stock_card_print.stock_card_report_id'
 
-#     def _get_initial_balance_qty(self, product_id, location_id, start_date):
-#         self._cr.execute('''
-#             SELECT SUM(product_uom_qty) as initial_qty
-#             FROM stock_move
-#             WHERE
-#                 product_id = %s AND
-#                 location_id = %s AND
-#                 date < %s
-#         ''', (product_id, location_id, start_date))
-#         init_qty = self._cr.fetchone()[0]
-#         return init_qty or 0.0
-
     def _get_initial_balance_qty(self, product_id, location_id,
                                  return_location, start_date):
-        self._cr.execute('''
-            SELECT
-                move.id,
-                move.origin as doc_number,
-                move.product_uom_qty as quantity,
-                0.0 as balance,
-                p.name as customer,
-                to_char(move.date, 'MM/DD/YYYY') as date,
-                move.location_dest_id as location_dest_id
-            FROM
-                stock_move move
-            LEFT JOIN
-                res_partner p on (p.id=move.partner_id)
-            WHERE
-                move.product_id = %s AND
-                (move.location_id in %s or location_dest_id in %s) AND
-                move.state = 'done' AND
-                move.date < %s
-            ORDER BY
-                move.date asc
-        ''', (product_id, (location_id, return_location),
-              (location_id, return_location), start_date))
-        move_result = self._cr.dictfetchall()
-
-        balance_qty = 0.0
-        for res in move_result:
-            destionation_address = self.env['stock.location'].\
-                browse(res['location_dest_id'])
-            if res['location_dest_id'] == location_id or\
-                    res['location_dest_id'] == return_location:
-                balance_qty = balance_qty + res['quantity']
-                res['balance'] = balance_qty
-            else:
-                balance_qty = balance_qty - res['quantity']
-                res['quantity'] = -1 * res['quantity']
-                res['balance'] = balance_qty
-        return balance_qty or 0.0
+        domain = [('location_id', 'in', (location_id, return_location)),
+                  ('product_id', '=', product_id),
+                  ('date', '<', start_date)]
+        field_list = ['quantity']
+        stock_result = self.env['stock.card.history'].\
+            search_read(domain, field_list)
+        total_init_qty = sum([history['quantity'] for history in stock_result])
+        return total_init_qty or 0.0
 
     def _get_product_line(self, data):
         result = {}
@@ -90,58 +49,35 @@ class ReportStockCardReport(models.AbstractModel):
         for product in products:
             init_balance_qty = self._get_initial_balance_qty(
                 product.id, location.id, return_location.id, start_date)
-            self._cr.execute('''
-                SELECT
-                    move.id,
-                    move.origin as doc_number,
-                    move.product_uom_qty as quantity,
-                    0.0 as balance,
-                    p.name as customer,
-                    to_char(move.date, 'MM/DD/YYYY') as date,
-                    move.location_dest_id as location_dest_id
-                FROM
-                    stock_move move
-                LEFT JOIN
-                    res_partner p on (p.id=move.partner_id)
-                WHERE
-                    move.product_id = %s AND
-                    (move.location_id in %s or location_dest_id in %s) AND
-                    move.state = 'done' AND
-                    move.date >= %s AND
-                    move.date <= %s
-                ORDER BY
-                    move.date asc
-            ''', (product.id, (location.id, return_location.id),
-                  (location.id, return_location.id), start_date, end_date))
-            move_result = self._cr.dictfetchall()
+            domain = [('location_id', 'in', (location.id, return_location.id)),
+                      ('product_id', '=', product.id),
+                      ('date', '<=', end_date),
+                      ('date', '>=', start_date)]
+            field_list = ['source', 'quantity',
+                          'date', 'partner_name',
+                          'balance']
+            stock_result = self.env['stock.card.history'].\
+                search_read(domain, field_list)
+
             balance_qty = init_balance_qty
-            for res in move_result:
-                destionation_address = self.env['stock.location'].\
-                    browse(res['location_dest_id'])
+            for res in stock_result:
+                balance_qty = balance_qty + res['quantity']
+                res['balance'] = balance_qty
 
-                if res['location_dest_id'] == location.id or\
-                        res['location_dest_id'] == return_location.id:
-                    balance_qty = balance_qty + res['quantity']
-                    res['balance'] = balance_qty
-                else:
-                    balance_qty = balance_qty - res['quantity']
-                    res['quantity'] = -1 * res['quantity']
-                    res['balance'] = balance_qty
-
-            move_result.insert(0, {'balance': init_balance_qty,
+            stock_result.insert(0, {'balance': init_balance_qty,
                                    'doc_number': False,
                                    'quantity': False,
                                    'customer': False,
                                    'date': False,
                                    'opening_balance': True})
-            move_result.append({'balance': False,
+            stock_result.append({'balance': False,
                                 'doc_number': False,
                                 'quantity': balance_qty,
                                 'customer': False,
                                 'date': False,
                                 'closing_balance': True})
             key = (location, product)
-            result[key] = move_result
+            result[key] = stock_result
         return result
 
     @api.multi
