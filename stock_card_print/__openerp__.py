@@ -28,6 +28,7 @@
 -Stock Card Report
     """,
     'data': [
+        'security/ir.model.access.csv',
         'report/report.xml',
         'wizard/stock_card_wiz.xml',
         'report/report_stock_card.xml',
