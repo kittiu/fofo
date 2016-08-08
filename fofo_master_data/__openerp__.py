@@ -36,7 +36,7 @@
 #         'account.payment.term.csv',
 #         'product.category.csv',
 #         'product.ul.csv',
-        'product_data.xml',  # Price List
+#'product_data.xml',  # Price List
 #         'res.partner.csv',
 #         'product.product.csv',
 #         'product.supplierinfo.csv', # Please delete product_supplierinfo, pricelist_partnerinfo
