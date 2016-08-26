@@ -50,7 +50,7 @@ class StockCardPrint(models.TransientModel):
     return_location_id = fields.Many2one(
         'stock.location',
         string='Return Location',
-        required=True,
+        required=False,
     )
 
     @api.multi

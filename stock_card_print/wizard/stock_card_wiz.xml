@@ -16,7 +16,7 @@
                         </group>
                         <group>
                             <field name="location_id" />
-                            <field name="return_location_id" domain="[('usage', '=', 'internal')]"/>
+                            <field name="return_location_id" invisible="1" domain="[('usage', '=', 'internal')]"/>
                         </group>
                     </group>
                     <notebook string="Products">

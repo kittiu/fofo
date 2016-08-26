@@ -27,8 +27,8 @@ class ReportStockCardReport(models.AbstractModel):
     _name = 'report.stock_card_print.stock_card_report_id'
 
     def _get_initial_balance_qty(self, product_id, location_id,
-                                 return_location, start_date):
-        domain = [('location_id', 'in', (location_id, return_location)),
+                                 start_date):
+        domain = [('location_id', '=', location_id),
                   ('product_id', '=', product_id),
                   ('date', '<', start_date)]
         field_list = ['quantity']
@@ -43,13 +43,13 @@ class ReportStockCardReport(models.AbstractModel):
         start_date = data['start_date']
         end_date = data['end_date']
         location = location_obj.browse(data['location_id'][0])
-        return_location = location_obj.browse(data['return_location_id'][0])
+#         return_location = location_obj.browse(data['return_location_id'][0])
         products = self.env['product.product'].browse(data['product_ids'])
 
         for product in products:
             init_balance_qty = self._get_initial_balance_qty(
-                product.id, location.id, return_location.id, start_date)
-            domain = [('location_id', 'in', (location.id, return_location.id)),
+                product.id, location.id, start_date)
+            domain = [('location_id', '=', location.id),
                       ('product_id', '=', product.id),
                       ('date', '<=', end_date),
                       ('date', '>=', start_date)]
@@ -58,7 +58,6 @@ class ReportStockCardReport(models.AbstractModel):
                           'balance']
             stock_result = self.env['stock.card.history'].\
                 search_read(domain, field_list)
-
             balance_qty = init_balance_qty
             for res in stock_result:
                 balance_qty = balance_qty + res['quantity']
