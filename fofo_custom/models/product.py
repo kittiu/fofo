@@ -26,7 +26,7 @@ from openerp.tools.float_utils import float_round
 
 class product_packaging(models.Model):
     _inherit = "product.packaging"
-    
+
     @api.one
     @api.depends('qty', 'ul')
     def _compute_volume(self):
@@ -36,7 +36,7 @@ class product_packaging(models.Model):
         qty1 = self.qty
         if qty1 > 0:
             self.volume = (height*width*length)/1000000/qty1
-            
+
     @api.one
     @api.depends('qty', 'ul')
     def _compute_gross_weight(self):
@@ -44,7 +44,7 @@ class product_packaging(models.Model):
         qty = self.qty
         if qty > 0:
             self.weight_gross = plu_gross_weight/qty
-    
+
     volume = fields.Float(compute='_compute_volume', string='Volume', digits=dp.get_precision('Product Volume'))
     weight_gross = fields.Float(compute='_compute_gross_weight', digits=dp.get_precision('Stock Weight') , string='Gross Weight')
     weight_net = fields.Float('Net Weight', digits=dp.get_precision('Stock Weight'), help="The net weight in Kg.")
@@ -66,13 +66,14 @@ class product_template(models.Model):
     @api.one
     @api.depends('product_variant_ids','product_variant_ids.landed_cost')
     def _get_landed_cost(self):
-        cost_sum = 0.0
-        counter = 0
-        for cost in self.product_variant_ids:
-            cost_sum += cost.landed_cost
-            counter += 1
-        self.landed_cost_all = cost_sum / counter #Average landed cost. #TODO: need to check cost price method: 1. Standard price 2. Avg price 3 Real price. ? If option 2 is selected then only do average? 
-    
+        if self.active:
+            cost_sum = 0.0
+            counter = 0
+            for cost in self.product_variant_ids:
+                cost_sum += cost.landed_cost
+                counter += 1
+            self.landed_cost_all = cost_sum / counter #Average landed cost. #TODO: need to check cost price method: 1. Standard price 2. Avg price 3 Real price. ? If option 2 is selected then only do average?
+
     @api.one
     @api.depends('product_variant_ids','product_variant_ids.total_standard_landed')
     def _total_cost_call(self):
@@ -94,7 +95,7 @@ class product_template(models.Model):
             qty1 = self.packaging_ids[0].qty
             if qty1 > 0:
                 self.volume = (height*width*length)/1000000/qty1
-            
+
     @api.one
     @api.depends('packaging_ids','packaging_ids.qty', 'packaging_ids.ul')
     def _compute_gross_weight(self):
@@ -130,7 +131,7 @@ class product_product(models.Model):
                 FROM
                     container_order_line l
                 LEFT JOIN
-                    container_order c on (c.id=l.container_order_id) 
+                    container_order c on (c.id=l.container_order_id)
                 LEFT JOIN
                     product_product p on (p.id=l.product_id)
                 WHERE
@@ -139,7 +140,7 @@ class product_product(models.Model):
             if res and res[0]:
                 self.qty_contained = res[0][0]
         self.virtual_qty_contained = self.virtual_available + self.qty_contained
-    
+
     @api.one
     @api.depends('standard_price', 'landed_cost')
     def _compute_total_cost(self):
@@ -175,7 +176,7 @@ class product_product(models.Model):
             self.incoming_not_contained_qty = float_round(moves_in.get(id, 0.0), precision_rounding=product.uom_id.rounding)
 #Columns
     qty_contained = fields.Float(compute=_count_qty_contained, string='Contained Quantity', copy=False, digits=dp.get_precision('Product Unit of Measure'), readonly=True, store=True, help='This will show the total contained qty of draft container orders.') # Show total qty in purchase order lines from container order which are draft container order (not confirmed yet.).
-    virtual_qty_contained = fields.Float(compute=_count_qty_contained, string='Forcasted Quantity  (Contained)',help='Forcasted Quantity + Contained Quantity.', copy=False, digits=dp.get_precision('Product Unit of Measure'), readonly=True, store=True) 
+    virtual_qty_contained = fields.Float(compute=_count_qty_contained, string='Forcasted Quantity  (Contained)',help='Forcasted Quantity + Contained Quantity.', copy=False, digits=dp.get_precision('Product Unit of Measure'), readonly=True, store=True)
     purchase_line_ids = fields.One2many('purchase.order.line', 'product_id', string='Purchase Lines')
     container_line_ids = fields.One2many('container.order.line', 'product_id', string='Container Order Lines')
     length =  fields.Float('Length')#unused todo remove
@@ -191,7 +192,7 @@ class product_product(models.Model):
 
 class product_ul(models.Model):
     _inherit = 'product.ul'
-    
+
     plu_gross_weight = fields.Float('PLU Gross Weight', digits=dp.get_precision('Stock Weight'),help="Total weight of product and package in kg.")
-    
+
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
