@@ -96,4 +96,3 @@ openerp-server.conf
 *.settings
 *.*~
 .~*
-*.pyc
