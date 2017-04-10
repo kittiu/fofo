@@ -6,14 +6,15 @@
             <field name="name">lazad.import.form</field>
             <field name="model">lazada.import</field>
             <field name="arch" type="xml">
-                <form string="Import">
-                    <separator string="Import Lazada Orders"/>
-                    <label string="This wizard will create lazada orders using lazada order file."/>
+                <form string="Import Lazada/Shopee Orders">
+                    <separator string="Import Lazada/Shopee Orders"/>
+                    <label string="This wizard will create lazada/shopee orders using lazada/shopee order file."/>
                     <newline/>
                     <label string="It will also create log history to show status of import."/>
                         <group>
                             <group>
                                 <field name="input_file"/>
+                                <field name="company_type" />
                                 <field name="journal_id" domain="[('type', '=', 'sale')]"/>
                                 <field name="refund_journal_id" domain="[('type', '=', 'sale_refund')]"/>
                             </group>
@@ -28,7 +29,7 @@
         </record>
 
         <record id="action_import_lazada" model="ir.actions.act_window">
-            <field name="name">Import Lazada Order</field>
+            <field name="name">Import Lazada/Shopee Order</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">lazada.import</field>
             <field name="view_type">form</field>
@@ -38,7 +39,7 @@
             <field name="target">new</field>
         </record>
         
-        <menuitem id="lazada_import_wiz_menu" name="Import Lazada Order" action="action_import_lazada"
+        <menuitem id="lazada_import_wiz_menu" name="Import Lazada/Shopee Order" action="action_import_lazada"
                    parent= "lazada_main_menu"/>
 
     </data>
