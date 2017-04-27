@@ -7,11 +7,11 @@
             <field eval="0"  name="supplier"/>
             <field name="is_company"></field>
         </record>
-        <record id="res_partner_shopee" model="res.partner">
+        <!-- <record id="res_partner_shopee" model="res.partner">
             <field name="name">Shopee</field>
             <field name="customer">1</field>
             <field eval="0"  name="supplier"/>
             <field name="is_company"></field>
-        </record>
+        </record> -->
     </data>
 </openerp>

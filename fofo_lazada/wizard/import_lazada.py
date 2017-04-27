@@ -33,7 +33,7 @@ from openerp.exceptions import except_orm, Warning, RedirectWarning
 
 class sale_order(models.Model):
     _inherit = 'sale.order'
-    
+
     is_lazada_order = fields.Boolean('Lazada/Shopee Order?', copy=False,
             readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},)
     lazada_order_no = fields.Char('Lazada/Shopee Order Number', copy=False,
@@ -66,72 +66,72 @@ class sale_order(models.Model):
 
 class stock_picking(models.Model):
     _inherit = 'stock.picking'
-    
+
     is_lazada_order = fields.Boolean(related='sale_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
     lazada_order_no = fields.Char(related='sale_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
-    
+
     @api.v7
     def _get_invoice_vals(self, cr, uid, key, inv_type, journal_id, move, context=None):
         res = super(stock_picking, self)._get_invoice_vals(cr, uid, key, inv_type, journal_id, move, context=context)
         if move.picking_id.is_lazada_order:
             res.update({'is_lazada_order': move.picking_id.is_lazada_order, 'lazada_order_no': move.picking_id.lazada_order_no})
         return res
-        
+
 class stock_move(models.Model):
     _inherit = 'stock.move'
-    
+
     is_lazada_order = fields.Boolean(related='picking_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
     lazada_order_no = fields.Char(related='picking_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
-    
+
     @api.v7
     def _get_invoice_line_vals(self, cr, uid, move, partner, inv_type, context=None):
         res = super(stock_move, self)._get_invoice_line_vals(cr, uid, move, partner, inv_type, context=context)
         res.update({'is_lazada_order': move.is_lazada_order, 'lazada_order_no': move.lazada_order_no})
         return res
-        
+
 class sale_order_line(models.Model):
     _inherit = 'sale.order.line'
-    
+
     is_lazada_order = fields.Boolean(related='order_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
     lazada_order_no = fields.Char(related='order_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
-    
+
     #Override from base to pass the lazada order number and lazada order check box to invoice line from sale order
     @api.v7
     def _prepare_order_line_invoice_line(self, cr, uid, line, account_id=False, context=None):
         res = super(sale_order_line, self)._prepare_order_line_invoice_line(cr, uid, line, account_id=False, context=context)
         res.update({'is_lazada_order': line.is_lazada_order, 'lazada_order_no': line.lazada_order_no})
         return res
-        
+
 class account_invoice(models.Model):
     _inherit = 'account.invoice'
-    
+
     is_lazada_order = fields.Boolean('Lazada/Shopee Order?', readonly=True)
     lazada_order_no = fields.Char('Lazada/Shopee Order Number', copy=False,
             readonly=True, states={'draft': [('readonly', False)]},)
-    
+
     #probuse override from base to pass the lazada order number from invoice to journal entry(account.move)
     @api.multi
     def action_move_create(self):
         res = super(account_invoice, self).action_move_create()
-        self.move_id.write({'lazada_order_no': self.lazada_order_no, 
+        self.move_id.write({'lazada_order_no': self.lazada_order_no,
                             'is_lazada_order': self.is_lazada_order})
         return res
 
 class account_invoice_line(models.Model):
     _inherit = 'account.invoice.line'
-    
+
     is_lazada_order = fields.Boolean(related='invoice_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
     lazada_order_no = fields.Char(related='invoice_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
 
 class account_move(models.Model):#probuse
     _inherit = 'account.move'
-    
+
     is_lazada_order = fields.Boolean('Lazada/Shopee Order?', readonly=True)
     lazada_order_no = fields.Char('Lazada/Shopee Order Number', readonly=True)
 
 class account_move_line(models.Model):#probuse
     _inherit = 'account.move.line'
-    
+
     is_lazada_order = fields.Boolean(related='move_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
     lazada_order_no = fields.Char(related='move_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
 
@@ -157,8 +157,9 @@ class lazada_import(models.TransientModel):
 
     @api.multi
     def import_orders(self):
-        partner = self.env['ir.model.data'].get_object_reference('fofo_lazada', self.company_type)[1]#probuse 6 April
-        
+        partner = self.env.ref('__export__.res_partner_360')  # Use existing instead
+        # partner = self.env['ir.model.data'].get_object_reference('fofo_lazada', self.company_type)[1]#probuse 6 April
+
         partner_data = self.env['sale.order'].onchange_partner_id(partner)
         sale_line_obj = self.env['sale.order.line']
         prod_obj = self.env['product.product']
@@ -172,14 +173,14 @@ class lazada_import(models.TransientModel):
             except:
                 e = sys.exc_info()[0]
                 raise Warning(_('Import Error!'),_('Wrong file format. Please enter .xlsx file.'))
-            
+
             product_dict = {}
             product_data_dict = {}
             sequene_counter = 0
             history_sequence = ''
             if len(lines.sheet_names()) > 1:
                 raise Warning(_('Import Error!'),_('Please check your xlsx file, it seems it contains more than one sheet.'))
-            for sheet_name in lines.sheet_names(): 
+            for sheet_name in lines.sheet_names():
                 sheet = lines.sheet_by_name(sheet_name)
                 rows = sheet.nrows
                 columns = sheet.ncols
@@ -204,7 +205,7 @@ class lazada_import(models.TransientModel):
                             seller_sku_list.append(seller_sku_value)
                             if not product_dict.get(seller_sku_value):
                                 product_dict[seller_sku_value] = products
-                            
+
                             if product_dict.get(seller_sku_value):
                                 product_id = product_dict.get(seller_sku_value)
                                 if not product_data_dict.get(product_id):
@@ -213,9 +214,9 @@ class lazada_import(models.TransientModel):
                                     lang=False, update_tax=True, date_order=False, packaging=False, fiscal_position=False, flag=False)
 
                                     product_data_dict[product_id] = product_data
-                                
+
                         order = str(sheet.row_values(row_no)[order_number]).split('.')[0]
-                        
+
                         qty = 1.0
                         if self.company_type == 'res_partner_shopee':
                             qty = sheet.row_values(row_no)[quantity]
@@ -252,7 +253,7 @@ class lazada_import(models.TransientModel):
                         final_date_new = datetime.strptime(date_convert_new, '%Y-%m-%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S')
                         if not line_sku['order_no']:
                             no_order_number = True
-                            
+
                         if not product_dict[line_sku['seller_sku']]:
                             order_fail = True
                             #this section will create the history for fail order
@@ -299,11 +300,11 @@ class lazada_import(models.TransientModel):
                             #if line product is bundled product then it will create the order with 'On Demand' order policy.
                             if bom_product:
                                 order_policy = 'manual'
-                                    
+
                     if order_fail:
                         continue
                     exist_orders = self.env['sale.order'].search([('lazada_order_no', '=', items_dict[item][0]['order_no'])])
-                    
+
                     flag_order_exist = False
                     #this section will check if order is already created
                     if exist_orders:
@@ -315,10 +316,10 @@ class lazada_import(models.TransientModel):
                                 #here will check if order exist and state changed in file then update the state of order in Odoo
                                 #if order tries to move to reverse state then it will stop it and create the history with fail status
                                 for line_status in items_dict[item]:
-                                    
+
                                     old_status = LAZADA_STATUS[str(history.status)]
                                     new_status = LAZADA_STATUS[str(line_status['status'])]
-                                    
+
                                     if new_status < old_status:
                                         history.order_status = 'fail'
                                         history.notes = 'Invalid State Movement'
@@ -338,7 +339,7 @@ class lazada_import(models.TransientModel):
                                                 if exist_orders.picking_ids:
                                                     for picking in exist_orders.picking_ids:
                                                         picking.write({'invoice_state': '2binvoiced'})
-                                                        
+
                                             #If Order has status failed then set
                                             #Delivery order in ready to transfer and then set that order to cancel state state
                                             if str(line_status['status']) == 'failed':
@@ -348,7 +349,7 @@ class lazada_import(models.TransientModel):
                                                         picking.write({'invoice_state': '2binvoiced'})
                                                         pick_id = picking.force_assign()
                                                         cancel_pick = picking.action_cancel()
-                                            
+
                                             #If Order has status shipped then set
                                             #Delivery order in transferred state but no need to create invoice
                                             if str(line_status['status']) == 'shipped':
@@ -357,7 +358,7 @@ class lazada_import(models.TransientModel):
                                                     for picking in exist_orders.picking_ids:
                                                         picking.write({'invoice_state': '2binvoiced'})
                                                         picking_to_transfer.append(picking.id)
-                                            
+
                                             #If Order has status delivered in excel file then make sale order to done state
                                             #Delivery order in transferred and invoice validated
                                             if str(line_status['status']) == 'delivered':
@@ -373,11 +374,11 @@ class lazada_import(models.TransientModel):
                                                             picking.write({'invoice_state': '2binvoiced'})
                                                             picking_to_invoice.append(picking.id)
                                                         picking_to_transfer.append(picking.id)
-                                            
+
                                             if str(line_status['status']) == 'canceled':
                                                 exist_orders.signal_workflow('order_confirm')
                                                 exist_orders.action_cancel()
-                                            
+
                                             if str(line_status['status']) == 'returned':
                                                 if exist_orders.state == 'draft':
                                                     exist_orders.signal_workflow('order_confirm')
@@ -395,14 +396,14 @@ class lazada_import(models.TransientModel):
                                                                         )
                                                             if picking.state == 'confirmed' or picking.state == 'assigned':
                                                                 picking.do_transfer()
-                                                        
+
                                                         move_ids = self.env['stock.move'].search([('picking_id','=',picking.id)])
-                                                         
+
                                                         return_moves = []
                                                         for stock_move in move_ids:
-                                                            return_moves.append((0, 0, {'product_id':stock_move.product_id.id, 
+                                                            return_moves.append((0, 0, {'product_id':stock_move.product_id.id,
                                                               'quantity': stock_move.product_qty,
-                                                              'move_id':stock_move.id, 
+                                                              'move_id':stock_move.id,
                                                               }))
                                                         #this section will create the return picking for sale order
                                                         if return_moves:
@@ -419,7 +420,7 @@ class lazada_import(models.TransientModel):
                                                             context = self._context.copy()
                                                             context.update({'active_id': picking.id})
                                                             new_picking_id, pick_type_id = stock_return_id.with_context(context)._create_returns()
-                                                            
+
                                                             return_picking = self.env['stock.picking'].browse(new_picking_id)
                                                         if exist_orders.invoice_ids:
                                                             for inv in exist_orders.invoice_ids:
@@ -444,7 +445,7 @@ class lazada_import(models.TransientModel):
                                                                             refund_invoice_data = self.env['account.invoice'].browse(i)
                                                                             refund_invoice_data.signal_workflow('invoice_open')
                                                                 return_picking.do_transfer()
-                                                                                
+
                                             history.status = line_status['status']
                                             history_ids.append(history.id)
                     if flag_order_exist:
@@ -494,7 +495,7 @@ class lazada_import(models.TransientModel):
                         sale_order_id = self.env['sale.order'].with_context(ctx).create(ordervals)
 
                     #TO DO: If one csv already imported in past then csv does not re-import again
-                    #TODO: If any lazada product is not found in openerp then that sale order must be in draft state  
+                    #TODO: If any lazada product is not found in openerp then that sale order must be in draft state
                     #if sale order created successfully then create the orderlines for particular sale order.
                     if sale_order_id:
                         for i in items_dict[item]:
@@ -602,11 +603,11 @@ class lazada_import(models.TransientModel):
                                         picking_to_invoice.append(picking.id)
                                         picking.write({'invoice_state': '2binvoiced'})
                                     picking_to_transfer.append(picking.id)
-                        
+
                         if i['status'] == 'canceled':
                             sale_order_id.signal_workflow('order_confirm')
                             sale_order_id.action_cancel()
-                            
+
                         if i['status'] == 'returned':
                             sale_order_id.signal_workflow('order_confirm')
                             if sale_order_id.picking_ids:
@@ -626,9 +627,9 @@ class lazada_import(models.TransientModel):
                                     move_ids = self.env['stock.move'].search([('picking_id','=',picking.id)])
                                     return_moves = []
                                     for stock_move in move_ids:
-                                        return_moves.append((0, 0, {'product_id':stock_move.product_id.id, 
+                                        return_moves.append((0, 0, {'product_id':stock_move.product_id.id,
                                                               'quantity': stock_move.product_qty,
-                                                              'move_id':stock_move.id, 
+                                                              'move_id':stock_move.id,
                                                               }))
                                     if return_moves:
                                         #create the return picking
@@ -649,7 +650,7 @@ class lazada_import(models.TransientModel):
                                         return_picking = self.env['stock.picking'].browse(new_picking_id)
                                         #transfer the return picking
                                         return_picking.do_transfer()
-                                        
+
                                     if sale_order_id.invoice_ids:
                                         for inv in sale_order_id.invoice_ids:
                                             #validate the invoices of order
