@@ -157,8 +157,11 @@ class lazada_import(models.TransientModel):
 
     @api.multi
     def import_orders(self):
-        partner = self.env.ref('__export__.res_partner_360')  # Use existing instead
-        # partner = self.env['ir.model.data'].get_object_reference('fofo_lazada', self.company_type)[1]#probuse 6 April
+        partner = False
+        if self.company_type == 'res_partner_lazada':
+            partner = self.env.ref('fofo_lazada.res_partner_lazada').id
+        elif self.company_type == 'res_partner_shopee':
+            partner = self.env.ref('__export__.res_partner_360').id
 
         partner_data = self.env['sale.order'].onchange_partner_id(partner)
         sale_line_obj = self.env['sale.order.line']
