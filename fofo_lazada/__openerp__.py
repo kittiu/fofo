@@ -30,7 +30,7 @@
     'data':[
             'data/lazada_order_sequence.xml',
             'data/history_sequence.xml',
-#             'data/partner_data.xml',
+            'data/partner_data.xml',
             'views/res_partner_view.xml',
             'views/import_history_view.xml',
             'wizard/import_wizard_view.xml',
