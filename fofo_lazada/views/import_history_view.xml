@@ -5,7 +5,7 @@
             <field name="name">lazada.import.history.form</field>
             <field name="model">import.history</field>
             <field name="arch" type="xml">
-                 <form string="Lazada/Shopee Import History" create="false" edit="false">
+                 <form string="eCommerce Import History" create="false" edit="false">
                     <sheet>
                         <group>
                             <group>
@@ -37,7 +37,7 @@
             <field name="name">lazada.import.history.tree</field>
             <field name="model">import.history</field>
             <field name="arch" type="xml">
-                 <tree string="Lazada/Shopee Import History" create="false" edit="false">
+                 <tree string="eCommerce Import History" create="false" edit="false">
                      <field name="name" string="History Number"/>
                     <field name="product_id"/>
                     <field name="order_number"/>
@@ -67,8 +67,8 @@
                     <group expand="0" string="Group By...">
                         <filter string="Import Date" name="import_time" context="{'group_by':'import_time'}" />
                         <filter string="History Number" name="name" context="{'group_by':'name'}" />
-                        <filter string="Lazada/Shopee Order" name="order_number" context="{'group_by':'order_number'}" />
-                        <filter string="Lazada/Shopee Status"  name="status" context="{'group_by':'status'}" />
+                        <filter string="eCommerce Order" name="order_number" context="{'group_by':'order_number'}" />
+                        <filter string="eCommerce Status"  name="status" context="{'group_by':'status'}" />
                         <filter string="Product" domain="[]" context="{'group_by':'product_id'}" />
                     </group>
                 </search>
@@ -83,8 +83,8 @@
             <field name="context">{'search_default_failed': 1}</field>
         </record>
 
-        <menuitem id="lazada_main_menu" name="Lazada/Shopee Sales" parent="base.menu_base_partner"/>
-        <menuitem id="lazada_import_history_menu" name="Lazada/Shopee History" parent="lazada_main_menu"
+        <menuitem id="lazada_main_menu" name="eCommerce Sales" parent="base.menu_base_partner"/>
+        <menuitem id="lazada_import_history_menu" name="eCommerce History" parent="lazada_main_menu"
                 action="lazada_import_history_action" />
     </data>
 </openerp>

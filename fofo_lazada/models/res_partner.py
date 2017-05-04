@@ -18,32 +18,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-{
-    'name' : 'Lazada Import',
-    'version': '1.0',
-    'author': 'Ecosoft',
-    'website' : 'http://www.ecosoft.co.th',
-    'category': 'Ecosoft Custom',
-    'description':"""
-- Lazada Import Orders.
-    """,
-    'data':[
-            'data/lazada_order_sequence.xml',
-            'data/history_sequence.xml',
-#             'data/partner_data.xml',
-            'views/res_partner_view.xml',
-            'views/import_history_view.xml',
-            'wizard/import_wizard_view.xml',
-            'views/sale_view.xml',
-            'views/invoice_view.xml',
-            'views/stock_view.xml',
-            'views/account_move_view.xml',
-            'views/product_view.xml',
-            'security/ir.model.access.csv',
-            ],
-    'depends':['fofo_custom', 'sale_bom_split'],
-    'installable':True,
-    'auto_install':False
-}
+from openerp import models, fields, api, _
+
+class res_parner(models.Model):
+    _inherit = 'res.partner'
+    
+    is_ecommerce = fields.Boolean(
+        string="eCommerce",
+    )
+    
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

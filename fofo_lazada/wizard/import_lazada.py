@@ -34,9 +34,9 @@ from openerp.exceptions import except_orm, Warning, RedirectWarning
 class sale_order(models.Model):
     _inherit = 'sale.order'
 
-    is_lazada_order = fields.Boolean('Lazada/Shopee Order?', copy=False,
+    is_lazada_order = fields.Boolean('eCommerce Order?', copy=False,
             readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},)
-    lazada_order_no = fields.Char('Lazada/Shopee Order Number', copy=False,
+    lazada_order_no = fields.Char('eCommerce Order Number', copy=False,
             readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},)
 
     @api.model
@@ -67,8 +67,8 @@ class sale_order(models.Model):
 class stock_picking(models.Model):
     _inherit = 'stock.picking'
 
-    is_lazada_order = fields.Boolean(related='sale_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
-    lazada_order_no = fields.Char(related='sale_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
+    is_lazada_order = fields.Boolean(related='sale_id.is_lazada_order', string='eCommerce Order?' ,readonly=True)
+    lazada_order_no = fields.Char(related='sale_id.lazada_order_no', string='eCommerce Order Number' ,readonly=True)
 
     @api.v7
     def _get_invoice_vals(self, cr, uid, key, inv_type, journal_id, move, context=None):
@@ -80,8 +80,8 @@ class stock_picking(models.Model):
 class stock_move(models.Model):
     _inherit = 'stock.move'
 
-    is_lazada_order = fields.Boolean(related='picking_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
-    lazada_order_no = fields.Char(related='picking_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
+    is_lazada_order = fields.Boolean(related='picking_id.is_lazada_order', string='eCommerce Order?' ,readonly=True)
+    lazada_order_no = fields.Char(related='picking_id.lazada_order_no', string='eCommerce Order Number' ,readonly=True)
 
     @api.v7
     def _get_invoice_line_vals(self, cr, uid, move, partner, inv_type, context=None):
@@ -92,8 +92,8 @@ class stock_move(models.Model):
 class sale_order_line(models.Model):
     _inherit = 'sale.order.line'
 
-    is_lazada_order = fields.Boolean(related='order_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
-    lazada_order_no = fields.Char(related='order_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
+    is_lazada_order = fields.Boolean(related='order_id.is_lazada_order', string='eCommerce Order?' ,readonly=True)
+    lazada_order_no = fields.Char(related='order_id.lazada_order_no', string='eCommerce Order Number' ,readonly=True)
 
     #Override from base to pass the lazada order number and lazada order check box to invoice line from sale order
     @api.v7
@@ -105,8 +105,8 @@ class sale_order_line(models.Model):
 class account_invoice(models.Model):
     _inherit = 'account.invoice'
 
-    is_lazada_order = fields.Boolean('Lazada/Shopee Order?', readonly=True)
-    lazada_order_no = fields.Char('Lazada/Shopee Order Number', copy=False,
+    is_lazada_order = fields.Boolean('eCommerce Order?', readonly=True)
+    lazada_order_no = fields.Char('eCommerce Order Number', copy=False,
             readonly=True, states={'draft': [('readonly', False)]},)
 
     #probuse override from base to pass the lazada order number from invoice to journal entry(account.move)
@@ -120,20 +120,20 @@ class account_invoice(models.Model):
 class account_invoice_line(models.Model):
     _inherit = 'account.invoice.line'
 
-    is_lazada_order = fields.Boolean(related='invoice_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
-    lazada_order_no = fields.Char(related='invoice_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
+    is_lazada_order = fields.Boolean(related='invoice_id.is_lazada_order', string='eCommerce Order?' ,readonly=True)
+    lazada_order_no = fields.Char(related='invoice_id.lazada_order_no', string='eCommerce Order Number' ,readonly=True)
 
 class account_move(models.Model):#probuse
     _inherit = 'account.move'
 
-    is_lazada_order = fields.Boolean('Lazada/Shopee Order?', readonly=True)
-    lazada_order_no = fields.Char('Lazada/Shopee Order Number', readonly=True)
+    is_lazada_order = fields.Boolean('eCommerce Order?', readonly=True)
+    lazada_order_no = fields.Char('eCommerce Order Number', readonly=True)
 
 class account_move_line(models.Model):#probuse
     _inherit = 'account.move.line'
 
-    is_lazada_order = fields.Boolean(related='move_id.is_lazada_order', string='Lazada/Shopee Order?' ,readonly=True)
-    lazada_order_no = fields.Char(related='move_id.lazada_order_no', string='Lazada/Shopee Order Number' ,readonly=True)
+    is_lazada_order = fields.Boolean(related='move_id.is_lazada_order', string='eCommerce Order?' ,readonly=True)
+    lazada_order_no = fields.Char(related='move_id.lazada_order_no', string='eCommerce Order Number' ,readonly=True)
 
 LAZADA_STATUS = {'pending': 1,'ready_to_ship' : 2, 'shipped': 3, 'delivered' : 4, 'failed' : 5, 'canceled' : 6, 'returned': 7}
 
@@ -145,23 +145,25 @@ class lazada_import(models.TransientModel):
         sale_journal_ids = self.env['account.journal'].search([('type', '=', 'sale')])
         return sale_journal_ids and sale_journal_ids.id or False
 
-    input_file = fields.Binary('Lazada/Shopee Order File (.xlsx format)')
-    company_type = fields.Selection([
-         ('res_partner_lazada', 'Lazada'),
-         ('res_partner_shopee', 'Shopee')],
-         string="Partner",
-         required=True,
+    input_file = fields.Binary('eCommerce Order File (.xlsx format)')
+#     company_type = fields.Selection([
+#          ('res_partner_lazada', 'Lazada'),
+#          ('res_partner_shopee', 'Shopee')],
+#          string="Partner",
+#          required=True,
+#     )
+    partner_id = fields.Many2one(
+        'res.partner',
+        string="Partner",
+        domain=[('is_ecommerce', '=', True)],
+        required=True,
     )
     journal_id = fields.Many2one('account.journal', string='Sales Journal', required=True, default=_get_journal)
     refund_journal_id = fields.Many2one('account.journal', string='Sales Refund Journal', required=True)
 
     @api.multi
     def import_orders(self):
-        partner = False
-        if self.company_type == 'res_partner_lazada':
-            partner = self.env.ref('fofo_lazada.res_partner_lazada').id
-        elif self.company_type == 'res_partner_shopee':
-            partner = self.env.ref('__export__.res_partner_360').id
+        partner = self.partner_id.id
 
         partner_data = self.env['sale.order'].onchange_partner_id(partner)
         sale_line_obj = self.env['sale.order.line']
@@ -193,9 +195,11 @@ class lazada_import(models.TransientModel):
                 order_number = header_row.index('Order Number')
                 unit_price = header_row.index('Unit Price')
                 status = header_row.index('Status')
-                if self.company_type == 'res_partner_shopee':
+                quantity = False
+                try:
                     quantity = header_row.index('Quantity')
-
+                except:
+                    quantity = False
                 items_dict = {}
                 seller_sku_list = []
                 picking_to_transfer = []
@@ -221,7 +225,7 @@ class lazada_import(models.TransientModel):
                         order = str(sheet.row_values(row_no)[order_number]).split('.')[0]
 
                         qty = 1.0
-                        if self.company_type == 'res_partner_shopee':
+                        if quantity:
                             qty = sheet.row_values(row_no)[quantity]
                         if not items_dict.get(order):
                             items_dict[order] = [{
