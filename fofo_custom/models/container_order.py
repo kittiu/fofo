@@ -462,10 +462,10 @@ class container_order(models.Model):
         exist_po_list.extend(self.all_inserted_po_ids.ids)
 
         # Remove CO lines
-        uninsert_po_ids = \
+        remove_po_ids = \
             list(set(self.inserted_po_ids) - set(self.po_ids))
         co_line_remove = self.co_line_ids.filtered(
-            lambda l: l.po_line_id.order_id.id in uninsert_po_ids)
+            lambda l: l.po_line_id.order_id.id in remove_po_ids)
 
         # Check if po already operated and its CO line exists in the CO.
         insert_po_ids = \
@@ -481,7 +481,6 @@ class container_order(models.Model):
         for po in self.po_ids:
             po_exist = False
 
-            # All Exist PO list
             if po not in self.all_inserted_po_ids:
                 exist_po_list.append(po.id)
 
@@ -495,7 +494,7 @@ class container_order(models.Model):
             po_list.append(po.id)
 
             # Compute CO lines
-            co_lines = self.compute_co_lines(po, po.order_line, co_lines)
+            co_lines = self.compute_co_lines(po, co_lines)
 
         # Write PO list
         self.write({'inserted_po_ids': [(6, 0, po_list)]})
@@ -511,15 +510,15 @@ class container_order(models.Model):
         co_line_remove.unlink()
 
     @api.multi
-    def compute_co_lines(self, order, order_lines, co_lines):
+    def compute_co_lines(self, po, co_lines):
         self.ensure_one()
+        po_currency = po.currency_id
         current_currency = self.currency_id
-        for order_line in order_lines:
+        for order_line in po.order_line:
             if not (order_line.state == 'confirmed' and
                order_line.remain_contain_qty > 0.0 and
                order_line.purchase_by_container is True):
                 continue
-            po_currency = order.currency_id
             amount = order_line.price_unit
 
             packaging_id = order_line.product_packaging.id
