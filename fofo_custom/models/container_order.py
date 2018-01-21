@@ -463,14 +463,15 @@ class container_order(models.Model):
 
         # Remove CO lines
         remove_po_ids = \
-            list(set(self.inserted_po_ids) - set(self.po_ids))
+            list(set(self.inserted_po_ids.ids) - set(self.po_ids.ids))
         co_line_remove = self.co_line_ids.filtered(
             lambda l: l.po_line_id.order_id.id in remove_po_ids)
 
         # Check if po already operated and its CO line exists in the CO.
         insert_po_ids = \
-            list(set(list(set(self.all_inserted_po_ids) & set(self.po_ids))) -
-                 set(self.inserted_po_ids))
+            list(set(list(set(
+                self.all_inserted_po_ids.ids) & set(self.po_ids.ids))) -
+                set(self.inserted_po_ids.ids))
         if self.co_line_ids.filtered(
            lambda l: l.po_line_id.order_id.id in insert_po_ids):
             raise Warning(
