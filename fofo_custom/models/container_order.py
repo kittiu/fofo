@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-from datetime import datetime 
+from datetime import datetime
 import datetime as DT
 
 import openerp
@@ -48,11 +48,11 @@ from openerp.tools.float_utils import float_compare
 
 class container_size(models.Model):
     _name = "container.size"
-    
+
     name = fields.Char('Container Size', required=True)
     max_weight = fields.Float('Max Weight', help="Max Weight of Container.")
     max_volume = fields.Float('Max Volume', help="Max Volume of Container.")
-    
+
 class container_order_line(models.Model):
     _name = 'container.order.line'
 
@@ -145,7 +145,7 @@ class container_order_line(models.Model):
     qty_package = fields.Float(string='Quantity / Package', compute='_compute_qty_package', store=True)
     price_subtotal = fields.Float(compute=_amount_line, string='Subtotal', digits= dp.get_precision('Account'))
     order_id = fields.Many2one(relation='purchase.order',related='po_line_id.order_id', string='Purchase Order')
-    
+
     @api.onchange('po_line_id')
     def on_change_po_line(self):
         if self.po_line_id:
@@ -159,7 +159,7 @@ class container_order_line(models.Model):
             po_currency = self.order_id.currency_id
             current_currency = self.container_order_id.currency_id
             ctx = dict(self._context or {})
-            ctx.update({'date': self.container_order_id.date}) 
+            ctx.update({'date': self.container_order_id.date})
             amount = line_data.price_unit
             if po_currency:
                 amount = po_currency.compute(line_data.price_unit, current_currency)
@@ -179,7 +179,7 @@ class container_order_line(models.Model):
                 for tax in line_data.taxes_id:
                     taxes.append(tax.id)
                 self.taxes_id = taxes
-                
+
 
 class container_order(models.Model):
     _inherit = ['mail.thread']
@@ -196,7 +196,7 @@ class container_order(models.Model):
                 name = name + ' [' + record.container_shipper_number + ']'
             res.append((record.id, name))
         return res
-    
+
     @api.one
     @api.depends('co_line_ids','state')
     def _compute_amount(self):
@@ -222,7 +222,7 @@ class container_order(models.Model):
             if not types:
                 raise Warning(_('Make sure you have at least an incoming picking type defined.'))
         return types[0]
-        
+
     @api.multi
     def onchange_picking_type_id(self, picking_type_id):
         value = {}
@@ -232,7 +232,7 @@ class container_order(models.Model):
                 value.update({'location_id': picktype.default_location_dest_id.id, 'related_usage': picktype.default_location_dest_id.usage})
             value.update({'related_location_id': picktype.default_location_dest_id.id})
         return {'value': value}
-        
+
     @api.multi
     @api.depends('picking_ids', 'invoice_ids')
     def _count_all(self):
@@ -261,7 +261,7 @@ class container_order(models.Model):
 
         result = self.env.ref('stock.action_picking_tree')
         result = result.read()[0]
-        
+
         result['context'] = {}
         if len(pick_ids) > 1:
             result['domain'] = "[('id','in', [" + ','.join(map(str, pick_ids)) + "])]"
@@ -370,7 +370,7 @@ class container_order(models.Model):
                     inv_currency = l.currency_id
                     current_currency = line.company_id.currency_id
                     ctx = dict(line._context or {})
-                    ctx.update({'date': self.date}) 
+                    ctx.update({'date': self.date})
                     amount = l.amount_total
                     if inv_currency:
                         amount = inv_currency.compute(l.amount_total, current_currency)
@@ -427,7 +427,7 @@ class container_order(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency', required=True, default=lambda self: self.env.user.company_id.currency_id.id)
     prev_currency_id = fields.Many2one('res.currency', string='Previous Currency')
     location_id = fields.Many2one('stock.location', string='Destination', required=True, domain=[('usage','<>','view')])
-    picking_ids =  fields.One2many('stock.picking', 'container_id', string='Picking List', store=True, copy=False, readonly=True)#compute=_get_picking_ids, 
+    picking_ids =  fields.One2many('stock.picking', 'container_id', string='Picking List', store=True, copy=False, readonly=True)#compute=_get_picking_ids,
     invoice_ids =  fields.One2many('account.invoice', 'container_id', string='Shipper Invoices', readonly=True, copy=False)
     shipment_count = fields.Integer(compute=_count_all, string='Incoming Shipments', copy=False)
     invoice_count = fields.Integer(compute=_count_all, string='Shipper Invoices', copy=False)
@@ -448,96 +448,115 @@ class container_order(models.Model):
     inserted_po_ids = fields.Many2many('purchase.order', 'purchase_container_record_rel', 'po_id', 'container_id', string='Operated Purchase Orders')
     all_inserted_po_ids = fields.Many2many('purchase.order', 'purchase_container_all_rel', 'po_id', 'container_id', string='All Purchase Orders')
 
-    @api.one
+    @api.multi
     def add_co_lines(self):
-        if self.po_ids:
-            co_lines = []
-            po_list = []
-            exist_po_list = []
-            co_line_remove = []
-            for po in self.po_ids:
-                po_exist = False
-                if po not in self.all_inserted_po_ids:
-                    exist_ids = self.all_inserted_po_ids.ids
-                    exist_po_list.append(po.id)
-                    exist_po_list.extend(exist_ids)
-                    
-                co_line_remove = []
-                for inserted_po in self.inserted_po_ids:
-                    if inserted_po not in self.po_ids:
-                        for co_line in self.co_line_ids:
-                            if co_line.po_line_id.order_id.id == inserted_po.id:
-                                co_line_remove.append(co_line)
-                                
-                for current_po in self.po_ids:#Check if po already operated and its CO line exists in the CO.
-                    if current_po in self.all_inserted_po_ids and current_po not in self.inserted_po_ids:
-                        for coline in self.co_line_ids:
-                            if coline.po_line_id.order_id.id == current_po.id:
-                                raise Warning(_('It seems you are trying to add purchase order which has been already added before so please first remove all its related Container order lines to add it again.'))
-                
-                if self.inserted_po_ids and po in self.inserted_po_ids:
-                    po_list.append(po.id)
-                    po_exist = True
-                
-                if po_exist:
-                    continue
+        self.ensure_one()
+
+        # Make empty CO lines if there is not PO's on CO form.
+        if not self.po_ids:
+            self.co_line_ids.unlink()
+            self.write({'inserted_po_ids': [(6, 0, [])]})
+            return True
+
+        co_lines, po_list, exist_po_list, co_line_remove = [], [], [], []
+        exist_po_list.extend(self.all_inserted_po_ids.ids)
+
+        # Remove CO lines
+        remove_po_ids = \
+            list(set(self.inserted_po_ids.ids) - set(self.po_ids.ids))
+        co_line_remove = self.co_line_ids.filtered(
+            lambda l: l.po_line_id.order_id.id in remove_po_ids)
+
+        # Check if po already operated and its CO line exists in the CO.
+        insert_po_ids = \
+            list(set(list(set(
+                self.all_inserted_po_ids.ids) & set(self.po_ids.ids))) -
+                set(self.inserted_po_ids.ids))
+        if self.co_line_ids.filtered(
+           lambda l: l.po_line_id.order_id.id in insert_po_ids):
+            raise Warning(
+                _('It seems you are trying to add purchase order which \
+                    has been already added before so please first remove all \
+                    its related Container order lines to add it again.'))
+
+        for po in self.po_ids:
+            po_exist = False
+
+            if po not in self.all_inserted_po_ids:
+                exist_po_list.append(po.id)
+
+            if po in self.inserted_po_ids:
                 po_list.append(po.id)
-                if po.order_line:
-                    for order_line in po.order_line:
-                        if order_line.state == 'confirmed' and order_line.remain_contain_qty > 0.0 and order_line.purchase_by_container is True:
-                            po_currency = po.currency_id
-                            current_currency = self.currency_id
-                            amount = order_line.price_unit
-                            
-                            packaging_id = order_line.product_packaging.id
-                            if not packaging_id:
-                                product_id = order_line.product_id
-                                if product_id.packaging_ids:
-                                    packaging_ids = product_id.packaging_ids.ids
-                                    packaging_id = packaging_ids[0]
-                            
-                            if po_currency:
-                                amount = po_currency.compute(order_line.price_unit, current_currency)
-                            taxes = []
-                            if order_line.taxes_id:
-                                for tax in order_line.taxes_id:
-                                    taxes.append(tax.id)
-                            co_line_vals = {
-                                            'container_order_id': self.id, 
-                                            'po_line_id':order_line.id,
-                                            'product_id': order_line.product_id.id,
-                                            'product_qty': order_line.remain_contain_qty,
-                                            'total_purchase_qty': order_line.product_qty,
-                                            'product_uom': order_line.product_uom.id,
-                                            'price_unit': amount,
-                                            'date_planned': order_line.date_planned,
-                                            'name': order_line.name,
-                                            'product_packaging': packaging_id,
-                                            'qty_package': order_line.qty_package,
-                                            'number_packages': order_line.number_packages,
-                                            'taxes_id': [(6, 0, taxes)]
-                                            }
-                            co_lines.append((0, 0, co_line_vals))#create
+                po_exist = True
 
-            if po_list:
-                self.write({'inserted_po_ids': [(6, 0, po_list)]}) #Write
-            if exist_po_list:
-                self.write({'all_inserted_po_ids': [(6, 0, exist_po_list)]}) #Write
-            if co_lines:
-                #create new co lines
-                for coline in co_lines:
-                    self.write({'co_line_ids': [coline]})
-            if co_line_remove:
-                for r in co_line_remove:
-                    #self.write({'co_line_ids': [(3, r)]})
-                    r.unlink()
-        else:# Make empty CO lines if there is not PO's on CO form.
-            if self.co_line_ids:
-                for col in self.co_line_ids:
-                    #self.write({'co_line_ids': [(3, col.id)]})
-                    col.unlink()
-                    self.write({'inserted_po_ids': [(6, 0, [])]})
+            if po_exist:
+                continue
 
+            po_list.append(po.id)
+
+            # Compute CO lines
+            co_lines = self.compute_co_lines(po, co_lines)
+
+        # Write PO list
+        self.write({'inserted_po_ids': [(6, 0, po_list)]})
+
+        # Write Exist Po list
+        self.write({'all_inserted_po_ids': [(6, 0, exist_po_list)]})
+
+        # Create new co lines
+        if co_lines:
+            self.write({'co_line_ids': co_lines})
+
+        # Unlink CO line remove
+        co_line_remove.unlink()
+
+    @api.multi
+    def compute_co_lines(self, po, co_lines):
+        self.ensure_one()
+        po_currency = po.currency_id
+        current_currency = self.currency_id
+        for order_line in po.order_line:
+            if not (order_line.state == 'confirmed' and
+               order_line.remain_contain_qty > 0.0 and
+               order_line.purchase_by_container is True):
+                continue
+            amount = order_line.price_unit
+
+            packaging_id = order_line.product_packaging.id
+            if not packaging_id:
+                product_id = order_line.product_id
+                packaging_id = product_id.packaging_ids and \
+                    product_id.packaging_ids.ids[0] or False
+
+            if po_currency:
+                amount = po_currency.compute(amount, current_currency)
+
+            taxes = order_line.taxes_id.ids
+
+            co_line_vals = self.prepare_co_line(
+                amount, packaging_id, taxes, order_line)
+            co_lines.append((0, 0, co_line_vals))
+        return co_lines
+
+    @api.multi
+    def prepare_co_line(self, amount, packaging_id, taxes, order_line):
+        self.ensure_one()
+        co_line_vals = {
+            'container_order_id': self.id,
+            'po_line_id': order_line.id,
+            'product_id': order_line.product_id.id,
+            'product_qty': order_line.remain_contain_qty,
+            'total_purchase_qty': order_line.product_qty,
+            'product_uom': order_line.product_uom.id,
+            'price_unit': amount,
+            'date_planned': order_line.date_planned,
+            'name': order_line.name,
+            'product_packaging': packaging_id,
+            'qty_package': order_line.qty_package,
+            'number_packages': order_line.number_packages,
+            'taxes_id': [(6, 0, taxes)]
+        }
+        return co_line_vals
 
     @api.onchange('inbound_shipper_id')
     def on_change_inbound_shipper_id(self):
@@ -640,7 +659,7 @@ class container_order(models.Model):
         else:
             acc_id = property_obj.get('property_account_expense_categ', 'product.category').id
         return acc_id
-    
+
     @api.multi
     def _prepare_inv_line(self, container_id, product_id, account_id, cost_type='inbound'):
         price_unit = False
@@ -774,9 +793,9 @@ class container_order(models.Model):
                 inv_id.button_compute(set_total=True)
                 order.write({'invoice_ids': [(4, inv_id.id)]})
                 res.append(inv_id.id)
-                order.draft_invoice_shipper = True 
+                order.draft_invoice_shipper = True
         return res
-    
+
     @api.multi #Email template to send.
     def send_to_shipper(self):
         ir_model_data = self.env['ir.model.data']
@@ -790,7 +809,7 @@ class container_order(models.Model):
         try:
             compose_form_id = ir_model_data.get_object_reference('mail', 'email_compose_message_wizard_form')[1]
         except ValueError:
-            compose_form_id = False 
+            compose_form_id = False
         ctx = dict(self._context)
         ctx.update({
             'default_model': 'container.order',
@@ -812,7 +831,7 @@ class container_order(models.Model):
             'target': 'new',
             'context': ctx,
         }
-        
+
     @staticmethod
     @api.multi
     def date_to_datetime(self, userdate):
@@ -899,7 +918,7 @@ class container_order(models.Model):
             move_template['product_uos_qty'] = diff_quantity
             res.append(move_template)
         return res
-    
+
     @api.multi
     def _create_stock_moves(self, order, order_lines, picking_id=False):
         stock_move = self.env['stock.move']
@@ -929,7 +948,7 @@ class container_order(models.Model):
             picking_id = self.env['stock.picking'].create(picking_vals)
             self._create_stock_moves(order, order.co_line_ids, picking_id)
             #picking_id.container_id = order.id
-        
+
     @api.multi
     def confirm_order(self):
         purchase_line_obj = self.env['purchase.order.line']
@@ -940,11 +959,11 @@ class container_order(models.Model):
             line_purchase = purchase_line_obj.browse(line.po_line_id.id)
 #            line_purchase.write({'container_id': self.ids[0], 'state': 'contained'})
             line.state = 'confirmed'
-            # If remaining qty in purchase order line become zero than change the state of purchsae order line to contained.           
+            # If remaining qty in purchase order line become zero than change the state of purchsae order line to contained.
             if line_purchase.remain_contain_qty <=0.0:
                 line_purchase.write({'state': 'contained'})
 
-            #check if all order lines are contained then change state to contained on purchase order.            
+            #check if all order lines are contained then change state to contained on purchase order.
             flag = True
             for order_line in line_purchase.order_id.order_line:
                 if order_line.state in ('draft', 'confirmed'):
@@ -966,9 +985,9 @@ class container_order(models.Model):
         for container in self:
             container.write({'state': 'done'})
             for co_line in container.co_line_ids:
-                purchase_line = co_line.po_line_id 
+                purchase_line = co_line.po_line_id
                 co_line.state = 'done' #make container order line state to done.
-                
+
                 order_dict[purchase_line.order_id.id] = False
                 line_count_done = 0
                 line_count_all = 0
@@ -983,7 +1002,7 @@ class container_order(models.Model):
                                 line_count_done += 1
                 if line_count_all == line_count_done and not line_count_confirm > 0:
                     order_dict[purchase_line.order_id.id] = True
-                else: 
+                else:
                     order_dict[purchase_line.order_id.id] = False
         #MAKE PO DONE IF ALL PO LINES ARE CONTAINED AND DONE.
         for order in order_dict:
