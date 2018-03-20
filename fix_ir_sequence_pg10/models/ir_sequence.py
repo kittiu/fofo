@@ -42,4 +42,5 @@ class IRSequence(models.Model):
                 element.number_next_actual = _predict_nextval(self, seq_id)
 
     def _set_number_next_actual(self):
-        self.number_next = self.number_next_actual or 0
+        for record in self:
+            record.write({'number_next': record.number_next_actual or 0})
