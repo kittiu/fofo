@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+  <data>
+    <record id="view_order_form_ean" model="ir.ui.view">
+      <field name="name">view.order.form.ean</field>
+      <field name="inherit_id" ref="sale.view_order_form"/>
+      <field name="model">sale.order</field>
+      <field name="arch" type="xml">
+        <xpath expr="//form/sheet/group[1]/group[1]" position="inside">
+          <field name="ean13"/>
+        </xpath>
+      </field>
+    </record>
+
+  </data>
+</openerp>
