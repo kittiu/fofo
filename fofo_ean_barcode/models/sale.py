@@ -23,7 +23,7 @@ class SaleOrder(models.Model):
                 False, self.fiscal_position, False, False)
             product_line['value'].update(
                 {'product_id': pd.id, 'product_uom_qty': 1, 'discount': 0.0,
-                 'state': 'draft', 'product_tmpl_id': pd.product_tmpl_id.id})
+                 'state': 'draft'})
             line = Line.new(product_line['value'])
             self.order_line += line
         self.ean13 = False
