@@ -2,7 +2,7 @@
 {
     'name': "FOFO EAN Barcode",
     'author': "Ecosoft",
-    'website' : 'http://www.ecosoft.co.th',
+    'website': 'http://www.ecosoft.co.th',
     'category': 'Uncategorized',
     'version': '0.1',
     'description': """
@@ -10,8 +10,8 @@
 * 2) Sales order quotation > create EAN13 Barcode for add product
 * 3) Check EAN13 barcode
     """,
-    'depends' : [
-        'sale',
+    'depends': [
+        'sale_stock',
     ],
     'data': [
         'views/product_view.xml',
